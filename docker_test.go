@@ -23,6 +23,11 @@ func waitService(url string) int {
 }
 
 func TestDockerContainer(t *testing.T) {
+	port, err := GetFreePort()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	// create tmp file for mounting into container
 	content := []byte("temporary file's content")
 	tmpfile, err := ioutil.TempFile("/tmp", "test")
@@ -50,14 +55,14 @@ func TestDockerContainer(t *testing.T) {
 	defer es.Stop()
 
 	es.SetEnv(map[string]string{"MYENV": "ok"})
-	es.SetPortsBinding(map[string]string{"5555": "0.0.0.0:5747"})
+	es.SetPortsBinding(map[string]string{"5555": fmt.Sprintf("0.0.0.0:%d", port)})
 	es.SetVolumesBinding(map[string]string{tmpfile.Name(): "/container_volume"})
 	err = es.Start("my-image-test-dc")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if waitService("http://127.0.0.1:5747/bar") != 200 {
+	if waitService(fmt.Sprintf("http://127.0.0.1:%d/bar", port)) != 200 {
 		t.Fatal("invalid resp status")
 	}
 
@@ -78,7 +83,7 @@ func TestDockerContainer(t *testing.T) {
 	}
 
 	// check mount
-	resp, err := http.Get("http://127.0.0.1:5747/volume/size")
+	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/volume/size", port))
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
