@@ -29,10 +29,12 @@ func NewDockerContainer(image string) (*DockerContainer, error) {
 	}
 
 getimg:
+	f := filters.NewArgs()
+	f.Add("reference", image)
 	res, err := cli.ImageList(
 		context.Background(),
 		types.ImageListOptions{
-			Filters: filters.NewArgs(filters.KeyValuePair{"reference", image}),
+			Filters: f,
 		},
 	)
 	if err != nil {
@@ -99,6 +101,13 @@ func (c *DockerContainer) SetPortsBinding(portsBinds map[string]string) {
 			port = vp[1]
 		}
 		c.hostConf.PortBindings[nat.Port(fmt.Sprintf("%s/tcp", cport))] = []nat.PortBinding{nat.PortBinding{host, port}}
+	}
+}
+
+func (c *DockerContainer) SetVolumesBinding(volumesBinds map[string]string) {
+	c.hostConf.Binds = make([]string, 0)
+	for k, v := range volumesBinds {
+		c.hostConf.Binds = append(c.hostConf.Binds, fmt.Sprintf("%s:%s", k, v))
 	}
 }
 

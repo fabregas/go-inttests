@@ -23,5 +23,14 @@ func main() {
 		fmt.Fprintf(w, "Hello, world")
 	})
 
+	http.HandleFunc("/volume/size", func(w http.ResponseWriter, r *http.Request) {
+		info, err := os.Stat("/container_volume")
+		if err != nil {
+			fmt.Fprintf(w, err.Error())
+		} else {
+			fmt.Fprintf(w, fmt.Sprintf("%d", info.Size()))
+		}
+	})
+
 	panic(http.ListenAndServe(":5555", nil))
 }
